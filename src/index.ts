@@ -1,28 +1,44 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
-interface RegisterParameters {
+type EmailPasswordType = {
+  email: string;
+  password: string
+}
+
+type EmailPasswordNameType = {
   email: string;
   password: string;
   name: string;
 }
 
-interface LoginParameters {
-  email: string;
-  password: string;
-}
-
-interface ResetPasswordParameters {
+type ResetPasswordType = {
   email: string;
   oldPassword: string;
   newPassword: string;
 }
 
-interface ChangeEmailParameters {
-  email: string;
-  password: string;
+type OKResponse = {
+  status: number;
+  message: string;
 }
 
-class Auth {
+type ErrorResponse = {
+  error: string;
+  status?: number;
+}
+
+abstract class AuthTypes {
+  abstract login({ email, password }: EmailPasswordType): Promise<OKResponse>;
+  abstract register({ email, password, name }: EmailPasswordNameType): Promise<OKResponse>;
+  abstract logout(): Promise<OKResponse>;
+  abstract verifyUser(): Promise<OKResponse>;
+  abstract resetPassword({ email, oldPassword, newPassword }: ResetPasswordType): Promise<OKResponse>;
+  abstract changeEmail({ email, password }: EmailPasswordType): Promise<OKResponse>;
+  abstract deleteUser({ email, password }: EmailPasswordType): Promise<OKResponse>;
+}
+
+
+class Auth extends AuthTypes {
   _id?: string;
   name?: string;
   email?: string;
@@ -30,10 +46,11 @@ class Auth {
   url: string;
 
   constructor(url: string) {
+    super();
     this.url = url;
   }
 
-  async login({ email, password }: LoginParameters) {
+  async login({ email, password }: EmailPasswordType) {
     try {
       const res: AxiosResponse = await axios.post(
         `${this.url}/api/login`,
@@ -45,20 +62,22 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
     }
   }
 
-  async register({ email, password, name }: RegisterParameters) {
+  async register({ email, password, name }: EmailPasswordNameType) {
     try {
       const res: AxiosResponse = await axios.post(`${this.url}/api/register`, { email, password, name });
       return {
@@ -66,16 +85,18 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
     }
   }
 
@@ -87,16 +108,18 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
     }
   }
 
@@ -108,22 +131,24 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
     }
   }
 
-  async resetPassword({ email, oldPassword, newPassword }: ResetPasswordParameters) {
+  async resetPassword({ email, oldPassword, newPassword }: ResetPasswordType) {
     try {
-      const res: AxiosResponse = await axios.post(`${this.url}/api/reset-password`, {
+      const res: AxiosResponse = await axios.patch(`${this.url}/api/reset-password`, {
         email,
         oldPassword,
         newPassword,
@@ -133,22 +158,24 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
     }
   }
 
-  async changeEmail({ email, password }: ChangeEmailParameters) {
+  async changeEmail({ email, password }: EmailPasswordType) {
     try {
-      const res: AxiosResponse = await axios.post(`${this.url}/api/change-email`, {
+      const res: AxiosResponse = await axios.patch(`${this.url}/api/change-email`, {
         email,
         password,
       });
@@ -157,16 +184,46 @@ class Auth {
         message: res.data.message,
       };
     } catch (err) {
+      let error: ErrorResponse;
       if (err.response) {
-        return {
-          ...err.response.data,
+        error = {
+          error: err.response.data.error,
           status: err.response.status,
         };
       } else {
-        return {
-          message: err.message,
+        error = {
+          error: err.message,
         };
       }
+      throw error;
+    }
+  }
+
+  async deleteUser({ email, password }: EmailPasswordType) {
+    try {
+      const res: AxiosResponse = await axios.delete(`${this.url}/api/delete-user`, {
+        data: {
+          email,
+          password,
+        }
+      });
+      return {
+        status: res.status,
+        message: res.data.message,
+      };
+    } catch (err) {
+      let error: ErrorResponse;
+      if (err.response) {
+        error = {
+          error: err.response.data.error,
+          status: err.response.status,
+        };
+      } else {
+        error = {
+          error: err.message,
+        };
+      }
+      throw error;
     }
   }
 }
