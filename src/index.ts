@@ -8,7 +8,7 @@ type EmailPasswordType = {
 type EmailPasswordNameType = {
   email: string;
   password: string;
-  name: string;
+  username: string;
 }
 
 type ResetPasswordType = {
@@ -23,13 +23,13 @@ type OKResponse = {
 }
 
 type ErrorResponse = {
-  error: string;
+  message: string;
   status?: number;
 }
 
 abstract class AuthTypes {
   abstract login({ email, password }: EmailPasswordType): Promise<OKResponse>;
-  abstract register({ email, password, name }: EmailPasswordNameType): Promise<OKResponse>;
+  abstract register({ email, password, username }: EmailPasswordNameType): Promise<OKResponse>;
   abstract logout(): Promise<OKResponse>;
   abstract verifyUser(): Promise<OKResponse>;
   abstract resetPassword({ email, oldPassword, newPassword }: ResetPasswordType): Promise<OKResponse>;
@@ -65,37 +65,32 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
     }
   }
 
-  async register({ email, password, name }: EmailPasswordNameType) {
+  async register({ email, password, username }: EmailPasswordNameType) {
     try {
-      const res: AxiosResponse = await axios.post(`${this.url}/api/register`, { email, password, name });
+      const res: AxiosResponse = await axios.post(`${this.url}/api/register`, { email, password, username });
       return {
         status: res.status,
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          error: err.response.data.error,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          error: err.message,
-        };
-      }
+      let error: ErrorResponse = err.response ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
       throw error;
     }
   }
@@ -111,12 +106,12 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
@@ -134,12 +129,12 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
@@ -161,12 +156,12 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
@@ -187,12 +182,12 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
@@ -215,12 +210,12 @@ class Auth extends AuthTypes {
       let error: ErrorResponse;
       if (err.response) {
         error = {
-          error: err.response.data.error,
+          message: err.response.data.message,
           status: err.response.status,
         };
       } else {
         error = {
-          error: err.message,
+          message: err.message,
         };
       }
       throw error;
