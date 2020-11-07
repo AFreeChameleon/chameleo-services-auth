@@ -1,22 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
-type EmailPasswordType = {
-  email: string;
-  password: string
-}
-
-type EmailPasswordNameType = {
-  email: string;
-  password: string;
-  username: string;
-}
-
-type ResetPasswordType = {
-  email: string;
-  oldPassword: string;
-  newPassword: string;
-}
-
 type OKResponse = {
   status: number;
   message: string;
@@ -28,21 +11,17 @@ type ErrorResponse = {
 }
 
 abstract class AuthTypes {
-  abstract login({ email, password }: EmailPasswordType): Promise<OKResponse>;
-  abstract register({ email, password, username }: EmailPasswordNameType): Promise<OKResponse>;
+  abstract login(email: string, password: string): Promise<OKResponse>;
+  abstract register(email: string, password: string, username: string): Promise<OKResponse>;
   abstract logout(): Promise<OKResponse>;
-  abstract verifyUser(): Promise<OKResponse>;
-  abstract resetPassword({ email, oldPassword, newPassword }: ResetPasswordType): Promise<OKResponse>;
-  abstract changeEmail({ email, password }: EmailPasswordType): Promise<OKResponse>;
-  abstract deleteUser({ email, password }: EmailPasswordType): Promise<OKResponse>;
+  abstract verifyUser(cookie?: { cookie: string }): Promise<boolean>;
+  abstract resetPassword(email: string): Promise<OKResponse>;
+  abstract changeEmail(email: string, password: string): Promise<OKResponse>;
+  abstract deleteUser(email: string, password: string): Promise<OKResponse>;
 }
 
 
 class Auth extends AuthTypes {
-  _id?: string;
-  name?: string;
-  email?: string;
-
   url: string;
 
   constructor(url: string) {
@@ -50,11 +29,11 @@ class Auth extends AuthTypes {
     this.url = url;
   }
 
-  async login({ email, password }: EmailPasswordType) {
+  async login(email: string, password: string) {
     try {
       const res: AxiosResponse = await axios.post(
         `${this.url}/api/login`,
-        { email, password },
+        { email: email, password: password },
         { withCredentials: true },
       );
       return {
@@ -62,22 +41,17 @@ class Auth extends AuthTypes {
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
+      let error: ErrorResponse = err.response ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
       throw error;
     }
   }
 
-  async register({ email, password, username }: EmailPasswordNameType) {
+  async register(email: string, password: string, username: string) {
     try {
       const res: AxiosResponse = await axios.post(`${this.url}/api/register`, { email, password, username });
       return {
@@ -103,72 +77,69 @@ class Auth extends AuthTypes {
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
-      throw error;
-    }
-  }
-
-  async verifyUser() {
-    try {
-      const res: AxiosResponse = await axios.post(`${this.url}/api/verify-token`, {}, { withCredentials: true });
-      return {
-        status: res.status,
-        message: res.data.message,
+      let error: ErrorResponse = err.response ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
       };
-    } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
       throw error;
     }
   }
 
-  async resetPassword({ email, oldPassword, newPassword }: ResetPasswordType) {
+  async verifyUser(cookie?: { cookie: string }) {
     try {
-      const res: AxiosResponse = await axios.patch(`${this.url}/api/reset-password`, {
+      const res: AxiosResponse = await axios.post(`${this.url}/api/verify-user`, {}, { 
+        withCredentials: true,
+        headers: !cookie ? cookie : undefined
+      });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  async resetPassword(email: string) {
+    try {
+      const res: AxiosResponse = await axios.post(`${this.url}/api/reset-password`, {
         email,
-        oldPassword,
-        newPassword,
       });
       return {
         status: res.status,
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
+      let error: ErrorResponse = err.response.data.message ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
       throw error;
     }
   }
 
-  async changeEmail({ email, password }: EmailPasswordType) {
+  async verifyResetPasswordToken(token: string, password: string) {
+    try {
+      const res: AxiosResponse = await axios.patch(`${this.url}/api/reset-password/${token}`, {
+        newPassword: password
+      });
+      return {
+        status: res.status,
+        message: res.data.message,
+      };
+    } catch (err) {
+      let error: ErrorResponse = err.response.data.message ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
+      throw error;
+    }
+  }
+
+  async changeEmail(email: string, password: string) {
     try {
       const res: AxiosResponse = await axios.patch(`${this.url}/api/change-email`, {
         email,
@@ -179,22 +150,17 @@ class Auth extends AuthTypes {
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
+      let error: ErrorResponse = err.response ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
       throw error;
     }
   }
 
-  async deleteUser({ email, password }: EmailPasswordType) {
+  async deleteUser(email: string, password: string) {
     try {
       const res: AxiosResponse = await axios.delete(`${this.url}/api/delete-user`, {
         data: {
@@ -207,17 +173,12 @@ class Auth extends AuthTypes {
         message: res.data.message,
       };
     } catch (err) {
-      let error: ErrorResponse;
-      if (err.response) {
-        error = {
-          message: err.response.data.message,
-          status: err.response.status,
-        };
-      } else {
-        error = {
-          message: err.message,
-        };
-      }
+      let error: ErrorResponse = err.response ? {
+        message: err.response.data.message,
+        status: err.response.status,
+      } : {
+        message: err.message
+      };
       throw error;
     }
   }
