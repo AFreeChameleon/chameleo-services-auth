@@ -89,10 +89,13 @@ class Auth extends AuthTypes {
 
   async verifyUser(cookie?: { cookie: string }) {
     try {
-      const res: AxiosResponse = await axios.post(`${this.url}/api/verify-user`, {}, { 
+      const headerObj = cookie ? {
         withCredentials: true,
-        headers: !cookie ? cookie : undefined
-      });
+        headers: cookie
+      } : {
+        withCredentials: true
+      }
+      const res: AxiosResponse = await axios.post(`${this.url}/api/verify-user`, {}, headerObj);
       return true;
     } catch (err) {
       return false;
